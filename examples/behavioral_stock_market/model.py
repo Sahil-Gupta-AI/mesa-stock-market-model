@@ -5,32 +5,32 @@ from agent import Trader
 from mesa.datacollection import DataCollector
 
 
-class Trading_interface(mesa.Model):
-    """
-    📊 Market Model
-
-    - Manages global market state
-    - Updates price using demand-supply imbalance
-    - Generates OHLC data for ML agents
-    """
+class TradingInterface(mesa.Model):
+    """Core market simulation model."""
 
     def __init__(self, n):
         super().__init__()
 
-        # 📌 Current share price
-        self.share_price = 300
+        # ======================================================
+        # MARKET STATE VARIABLES
+        # ======================================================
 
-        # 📌 Market capacity (not enforced yet)
+        self.share_price = 300
         self.num_of_share = 30000
 
-        # 📌 Reset every step
         self.total_demand = 0
         self.total_supply = 0
 
-        # 📌 Create Trader agents
+        # ======================================================
+        # CREATE AGENTS
+        # ======================================================
+
         Trader.create_agents(model=self, n=n)
 
-        # 📊 Collect model-level data
+        # ======================================================
+        # DATA COLLECTION
+        # ======================================================
+
         self.datacollector = DataCollector(
             model_reporters={
                 "Price": "share_price",
@@ -43,29 +43,15 @@ class Trading_interface(mesa.Model):
         self.datacollector.collect(self)
 
     def update_price(self):
-        """
-        📈 Price formation mechanism
-
-        New Price =
-            Old Price
-            + (Demand - Supply) * sensitivity
-            + random noise
-        """
+        """Adjust price using demand-supply imbalance + noise."""
 
         imbalance = self.total_demand - self.total_supply
-
-        # Market sensitivity parameter
         sensitivity = 0.005
-
-        # Add Gaussian noise (market volatility)
         noise = random.gauss(0, 0.5)
 
         self.share_price += imbalance * sensitivity + noise
-
-        # Prevent negative price
         self.share_price = max(1, self.share_price)
 
-        # Reset counters for next step
         self.total_demand = 0
         self.total_supply = 0
 

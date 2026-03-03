@@ -5,13 +5,13 @@ from collections import Counter, defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import solara
-from model import Trading_interface
+from model import TradingInterface
 
-# ==============================
-# MODEL INIT
-# ==============================
+# ==========================================================
+# APPLICATION STATE (Avoid using global variables)
+# ==========================================================
 
-model = Trading_interface(300)
+state = {"model": TradingInterface(300)}
 
 refresh = solara.reactive(0)
 running = solara.reactive(False)
@@ -21,9 +21,11 @@ running = solara.reactive(False)
 def Page():
     solara.Markdown("# 📈 Behavioral Stock Market Dashboard")
 
-    # ==============================
-    # AUTO RUN USING THREAD (SAFE)
-    # ==============================
+    model = state["model"]
+
+    # ==========================================================
+    # AUTO-RUN LOOP (Runs simulation safely in background thread)
+    # ==========================================================
 
     def auto_loop():
         while running.value:
@@ -32,6 +34,7 @@ def Page():
             time.sleep(0.5)
 
     def start_stop():
+        """Toggle automatic simulation."""
         if not running.value:
             running.value = True
             threading.Thread(target=auto_loop, daemon=True).start()
@@ -39,18 +42,19 @@ def Page():
             running.value = False
 
     def step():
+        """Execute a single simulation step."""
         model.step()
         refresh.value += 1
 
     def reset():
-        global model
+        """Reset the simulation to initial state."""
         running.value = False
-        model = Trading_interface(300)
+        state["model"] = TradingInterface(300)
         refresh.value += 1
 
-    # ==============================
-    # CONTROLS
-    # ==============================
+    # ==========================================================
+    # CONTROL BUTTONS
+    # ==========================================================
 
     solara.Row(
         [
@@ -65,26 +69,26 @@ def Page():
     # Force re-render
     _ = refresh.value
 
-    # ==============================
-    # CURRENT PRICE
-    # ==============================
+    # ==========================================================
+    # CURRENT MARKET PRICE
+    # ==========================================================
 
     solara.Markdown(f"## 💰 Current Price: ₹ {model.share_price:.2f}")
 
-    # ==============================
+    # ==========================================================
     # TRADER DISTRIBUTION
-    # ==============================
+    # ==========================================================
 
-    trader_types = [a.trader_type for a in model.agents]
+    trader_types = [agent.trader_type for agent in model.agents]
     counts = Counter(trader_types)
 
     solara.Markdown("### 👥 Trader Distribution")
-    for t, c in counts.items():
-        solara.Markdown(f"- {t}: {c}")
+    for trader_type, count in counts.items():
+        solara.Markdown(f"- {trader_type}: {count}")
 
-    # ==============================
-    # PROFIT + MIN/MAX ANALYSIS
-    # ==============================
+    # ==========================================================
+    # GROUP WEALTH ANALYSIS
+    # ==========================================================
 
     group_wealth = defaultdict(list)
 
@@ -112,9 +116,9 @@ def Page():
         best_group = max(avg_dict, key=avg_dict.get)
         solara.Markdown(f"## 🚀 Best Performing Strategy: **{best_group}**")
 
-    # ==============================
-    # GRAPH
-    # ==============================
+    # ==========================================================
+    # PRICE TIME SERIES GRAPH
+    # ==========================================================
 
     data = model.datacollector.get_model_vars_dataframe()
 

@@ -1,11 +1,14 @@
+"""
+📈 TrendPredictor
+
+Simple wrapper for trained ML model.
+Loads model once and performs predictions.
+"""
+
 import joblib
 
 
 class TrendPredictor:
-    """
-    Wrapper for trained ML trend model.
-    """
-
     def __init__(self, path="trend_model.pkl"):
         self.model = joblib.load(path)
 

@@ -6,17 +6,9 @@ from trend_predictor import TrendPredictor
 
 
 class Trader(mesa.Agent):
-    """
-    🧠 Behavioral Trader Agent
+    """Behavioral trader agent."""
 
-    Types:
-    - Fundamentalist (Intrinsic Value)
-    - TrendFollower (ML Model Prediction)
-    - RiskAverse (Loss sensitive)
-    """
-
-    # 🔥 Load ML model only once (class level)
-    trend_model = TrendPredictor()
+    trend_model = TrendPredictor()  # Load ML model once
 
     def __init__(self, model):
         super().__init__(model)
@@ -32,16 +24,13 @@ class Trader(mesa.Agent):
         self.memory = []
 
     def step(self):
-        """Agent behavioral decision step"""
-
+        """Execute behavioral strategy."""
         self.memory.append(self.model.share_price)
 
         if self.trader_type == "Fundamentalist":
             self.fundamental_logic()
-
         elif self.trader_type == "TrendFollower":
             self.trend_logic()
-
         elif self.trader_type == "RiskAverse":
             self.risk_averse_logic()
 
@@ -59,11 +48,7 @@ class Trader(mesa.Agent):
 
     # 📈 TrendFollower Strategy (ML Based)
     def trend_logic(self):
-        """
-        Use trained ML model to predict trend.
-        1 → Buy
-        0 → Sell
-        """
+        """ML-based trend prediction."""
 
         current_df = pd.DataFrame(
             [
@@ -86,17 +71,13 @@ class Trader(mesa.Agent):
 
     # 🛑 Risk Averse Strategy
     def risk_averse_logic(self):
-        """
-        - Sell quickly if price drops
-        - Buy small quantity only
-        """
+        """Sell quickly on loss, buy cautiously."""
 
         price = self.model.share_price
 
-        if len(self.memory) > 1:
-            if price < self.memory[-1]:
-                self.sell()
-                return
+        if len(self.memory) > 1 and price < self.memory[-1]:
+            self.sell()
+            return
 
         if self.amount > price:
             small_volume = 1
